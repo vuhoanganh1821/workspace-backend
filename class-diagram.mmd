@@ -1,0 +1,130 @@
+classDiagram
+    class User {
+        +string _id
+        +string email
+        +string password
+        +string fullName
+        +string role
+        +string avatar
+        +string phoneNumber
+        +string address
+        +Date dateOfBirth
+        +string gender
+        +number salary
+        +string jobPositionId
+        +boolean isActive
+        +Date createdAt
+        +Date updatedAt
+    }
+
+    class Timesheet {
+        +string _id
+        +string taskName
+        +string description
+        +Date startTime
+        +Date endTime
+        +number hourlyRate
+        +string userId
+        +string projectId
+        +string taskTypeId
+        +Date createdAt
+        +Date updatedAt
+    }
+
+    class Project {
+        +string _id
+        +string name
+        +string description
+        +string companyName
+        +string companyWebsite
+        +string companyPhone
+        +string city
+        +string logo
+        +string customer
+        +string address
+        +string customerEmail
+        +string customerPhone
+        +boolean isActive
+        +boolean isArchived
+        +Date startDate
+        +Date endDate
+        +Date createdAt
+        +Date updatedAt
+    }
+
+    class ProjectMember {
+        +string _id
+        +string projectId
+        +string userId
+        +string memberRole
+        +Date joinedAt
+        +Date createdAt
+        +Date updatedAt
+    }
+
+    class TaskType {
+        +string _id
+        +string name
+        +string colorCode
+        +Date createdAt
+        +Date updatedAt
+    }
+
+    class Technology {
+        +string _id
+        +string name
+        +string type
+        +Date createdAt
+        +Date updatedAt
+    }
+
+    class ProjectTechnology {
+        +string _id
+        +string projectId
+        +string technologyId
+        +Date createdAt
+        +Date updatedAt
+    }
+
+    class JobPosition {
+        +string _id
+        +string name
+        +Date createdAt
+        +Date updatedAt
+    }
+
+    class Payroll {
+        +string _id
+        +string userId
+        +number month
+        +number year
+        +number totalHours
+        +number totalAmount
+        +string paymentStatus
+        +Date processedDate
+        +Date createdAt
+        +Date updatedAt
+    }
+
+    class Contract {
+        +string _id
+        +string userId
+        +string contractType
+        +number salaryAmount
+        +Date startDate
+        +Date endDate
+        +Date createdAt
+        +Date updatedAt
+    }
+
+    %% Relationships
+    User "1" -- "0..*" Timesheet
+    User "1" -- "0..*" ProjectMember
+    User "1" -- "0..*" Payroll
+    User "1" -- "0..*" Contract
+    JobPosition "1" -- "0..*" User
+    Project "1" -- "0..*" Timesheet
+    Project "1" -- "0..*" ProjectMember
+    Project "1" -- "0..*" ProjectTechnology
+    Technology "1" -- "0..*" ProjectTechnology
+    TaskType "1" -- "0..*" Timesheet

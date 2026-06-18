@@ -1,0 +1,123 @@
+erDiagram
+    USER ||--o{ TIMESHEET : ""
+    USER ||--o{ PROJECT_MEMBER : ""
+    USER ||--o{ PAYROLL : ""
+    USER ||--o{ CONTRACT : ""
+    JOB_POSITION ||--o{ USER : ""
+    
+    PROJECT ||--o{ TIMESHEET : ""
+    PROJECT ||--o{ PROJECT_MEMBER : ""
+    PROJECT ||--o{ PROJECT_TECHNOLOGY : ""
+    
+    TECHNOLOGY ||--o{ PROJECT_TECHNOLOGY : ""
+    TASK_CATEGORY ||--o{ TIMESHEET : ""
+
+    USER {
+        string _id PK
+        string email
+        string password
+        string fullName
+        string avatar
+        string phoneNumber
+        string role
+        string address
+        Date dateOfBirth
+        string gender
+        number salary
+        string jobPositionId FK
+        boolean isActive
+        Date createdAt
+        Date updatedAt
+    }
+
+    PROJECT {
+        string _id PK
+        string name
+        string description
+        string status
+        Date startDate
+        Date endDate
+        Date createdAt
+        Date updatedAt
+    }
+
+    TIMESHEET {
+        string _id PK
+        string taskName
+        string description
+        Date startTime
+        Date endTime
+        number hourlyRate
+        string userId FK
+        string projectId FK
+        string taskTypeId FK
+        string createdBy
+        string updatedBy
+        Date createdAt
+        Date updatedAt
+    }
+
+    PROJECT_MEMBER {
+        string _id PK
+        string projectId FK
+        string userId FK
+        string memberRole
+        Date joinedAt
+        Date createdAt
+        Date updatedAt
+    }
+
+    TASK_CATEGORY {
+        string _id PK
+        string name
+        string colorCode
+        Date createdAt
+        Date updatedAt
+    }
+
+    TECHNOLOGY {
+        string _id PK
+        string name
+        string type
+        Date createdAt
+        Date updatedAt
+    }
+
+    PROJECT_TECHNOLOGY {
+        string _id PK
+        string projectId FK
+        string technologyId FK
+        Date createdAt
+        Date updatedAt
+    }
+
+    JOB_POSITION {
+        string _id PK
+        string name
+        Date createdAt
+        Date updatedAt
+    }
+
+    PAYROLL {
+        string _id PK
+        string userId FK
+        number month
+        number year
+        number totalHours
+        number totalAmount
+        string paymentStatus
+        Date processedDate
+        Date createdAt
+        Date updatedAt
+    }
+
+    CONTRACT {
+        string _id PK
+        string userId FK
+        string contractType
+        number salaryAmount
+        Date startDate
+        Date endDate
+        Date createdAt
+        Date updatedAt
+    }
