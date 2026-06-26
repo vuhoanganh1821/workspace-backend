@@ -1,24 +1,37 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import * as bcrypt from 'bcrypt';
+import { get } from 'lodash';
 import uniqBy from 'lodash/uniqBy';
 import { Model, Types } from 'mongoose';
-import { EProjectRole, ERole } from 'src/enums';
+import { EProjectRole, ERole, ETaskStatus } from 'src/enums';
 import {
   ProjectMember,
   ProjectMemberDocument,
   ProjectMemberWithRelations,
 } from '../project-members/entities/project-member.entity';
 import { Project, ProjectDocument } from '../projects/entities/project.entity';
+import { Task, TaskDocument } from '../tasks/entities/task.entity';
 import { CreateUserDto } from './dto/create-user.dto';
+import {
+  GetPerformanceQueryDto,
+  UserPerformanceDto,
+} from './dto/get-user-performance.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User, UserDocument } from './entities/user.entity';
+import {
+  getUserPerformancePipeline,
+  IAggregationResult,
+} from './pipelines/user-performance.pipeline';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectModel(User.name)
     private userModel: Model<UserDocument>,
+
+    @InjectModel(Task.name)
+    private taskModel: Model<TaskDocument>,
 
     @InjectModel(Project.name)
     private projectModel: Model<ProjectDocument>,
@@ -66,6 +79,68 @@ export class UsersService {
     return { message: 'User deleted successfully' };
   }
 
+  async getPerformance(
+    userId: string,
+    query: GetPerformanceQueryDto,
+  ): Promise<UserPerformanceDto> {
+    const pipeline = getUserPerformancePipeline(userId, query);
+
+    const [aggregationResult] = await this.taskModel
+      .aggregate<IAggregationResult>(pipeline)
+      .exec();
+
+    const { tasksData, statusOverviewData, projectTimelineData } =
+      aggregationResult;
+
+    const totalTasks = tasksData?.length ?? 0;
+    const totalReopens =
+      tasksData?.reduce((sum, task) => sum + (task?.reopenCount ?? 0), 0) ?? 0;
+    const totalLoggedHours =
+      tasksData?.reduce((sum, task) => sum + (task?.loggedHours ?? 0), 0) ?? 0;
+
+    const completedTasksCount =
+      statusOverviewData?.find(
+        (statusOverview) => statusOverview?._id === ETaskStatus.DONE,
+      )?.count ?? 0;
+
+    const completionRate =
+      totalTasks > 0
+        ? Number(((completedTasksCount / totalTasks) * 100).toFixed(2))
+        : 0;
+
+    return {
+      kpis: {
+        totalTasks,
+        completionRate,
+        totalReopens,
+        loggedHours: totalLoggedHours,
+      },
+      projectTimeLine:
+        projectTimelineData?.map((project) => ({
+          _id: project?._id?.toString(),
+          name: project?.name ?? '',
+          totalLoggedHours: project?.totalLoggedHours ?? 0,
+        })) ?? [],
+      statusOverview:
+        statusOverviewData?.map((statusData) => ({
+          status: statusData?._id,
+          count: statusData?.count ?? 0,
+        })) ?? [],
+      tasks:
+        tasksData?.map((task) => ({
+          _id: task?._id?.toString(),
+          title: task?.title ?? '',
+          projectId: task?.projectId ?? '',
+          dueDate: task?.dueDate ?? null,
+          completionDate: task?.completionDate ?? null,
+          reopenCount: task?.reopenCount ?? 0,
+          status: task?.status as ETaskStatus,
+          estimatedHours: task?.estimatedHours ?? 0,
+          loggedHours: task?.loggedHours ?? 0,
+        })) ?? [],
+    };
+  }
+
   async getMyManagedUsers(currentUserId: string) {
     const foundUser = await this.userModel.findById(currentUserId);
 
@@ -97,7 +172,6 @@ export class UsersService {
     const allMembersInProjects = await this.projectMemberModel
       .find({
         projectId: { $in: projectIds },
-        userId: { $ne: userObjectId },
       })
       .populate('user', '_id fullName avatar')
       .lean<ProjectMemberWithRelations[]>()

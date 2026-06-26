@@ -38,7 +38,7 @@ export default tseslint.config(
       '@typescript-eslint/no-unsafe-argument': 'warn',
       '@typescript-eslint/no-unsafe-assignment': 'warn',
       '@typescript-eslint/no-floating-promises': 'warn',
-      'prettier/prettier': ['error', { endOfLine: 'auto' }],
+      'prettier/prettier': ['warn', { endOfLine: 'auto' }],
 
       // 3. Thêm cấu hình tự động sort import vào đây
       'perfectionist/sort-imports': [

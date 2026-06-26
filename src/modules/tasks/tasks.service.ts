@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { ESprintStatus } from 'src/enums';
+import { ESprintStatus, ETaskStatus, ETaskStatusOrder } from 'src/enums';
 import {
   Sprint,
   SprintDocument,
@@ -109,6 +109,14 @@ export class TasksService {
 
     const updateQuery = {
       ...rest,
+      ...(foundTask?.status !== ETaskStatus.DONE &&
+        updateTaskDto?.status === ETaskStatus.DONE && {
+          completionDate: new Date(),
+        }),
+      ...(updateTaskDto?.status &&
+        this.checkTaskReopened(foundTask?.status, updateTaskDto?.status) && {
+          reopenCount: (foundTask?.reopenCount ?? 0) + 1,
+        }),
       ...(sprintId && { sprintId: new Types.ObjectId(sprintId) }),
       ...(projectId && { projectId: new Types.ObjectId(projectId) }),
       ...(createdBy && { createdBy: new Types.ObjectId(createdBy) }),
@@ -152,5 +160,19 @@ export class TasksService {
 
   findOne(id: string) {
     return this.taskModel.findById(id).populate('assignee').exec();
+  }
+
+  checkTaskReopened(oldStatus: ETaskStatus, newStatus: ETaskStatus): boolean {
+    const completedStatuses = [
+      ETaskStatus.CODING_DONE,
+      ETaskStatus.TESTING,
+      ETaskStatus.DONE,
+    ];
+
+    if (!completedStatuses?.includes(oldStatus)) {
+      return false;
+    }
+
+    return ETaskStatusOrder[newStatus] < ETaskStatusOrder[oldStatus];
   }
 }

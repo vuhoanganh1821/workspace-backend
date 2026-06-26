@@ -23,6 +23,14 @@ export enum ETaskStatus {
   DONE = 'DONE',
 }
 
+export enum ETaskStatusOrder {
+  TODO = 1,
+  IN_PROGRESS = 2,
+  CODING_DONE = 3,
+  TESTING = 4,
+  DONE = 5,
+}
+
 export enum ETaskPriority {
   LOW = 'LOW',
   MEDIUM = 'MEDIUM',

@@ -75,6 +75,12 @@ export class Task {
   dueDate: Date;
 
   @Prop()
+  completionDate: Date;
+
+  @Prop({ default: 0 })
+  reopenCount: number;
+
+  @Prop({ default: 0 })
   estimatedHours: number;
 
   @Prop({ default: 0 })
