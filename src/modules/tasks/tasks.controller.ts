@@ -7,13 +7,17 @@ import {
   Param,
   Delete,
   Query,
+  UseGuards,
 } from '@nestjs/common';
+import { CurrentUserId } from 'src/common/current-user.decorator';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { MoveTaskDto } from './dto/move-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { TasksService } from './tasks.service';
 
 @Controller('tasks')
+@UseGuards(JwtAuthGuard)
 export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
 
@@ -47,9 +51,18 @@ export class TasksController {
     return this.tasksService.findOne(id);
   }
 
+  @Get(':id/histories')
+  getTaskHistories(@Param('id') id: string) {
+    return this.tasksService.getHistories(id);
+  }
+
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateTaskDto: UpdateTaskDto) {
-    return this.tasksService.update(id, updateTaskDto);
+  update(
+    @Param('id') id: string,
+    @Body() updateTaskDto: UpdateTaskDto,
+    @CurrentUserId() userId: string,
+  ) {
+    return this.tasksService.update(id, updateTaskDto, userId);
   }
 
   @Patch(':id/move')

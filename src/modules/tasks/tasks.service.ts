@@ -4,12 +4,19 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
+import dayjs from 'dayjs';
 import { Model, Types } from 'mongoose';
 import { ESprintStatus, ETaskStatus, ETaskStatusOrder } from 'src/enums';
 import {
   Sprint,
   SprintDocument,
 } from 'src/modules/sprints/entities/sprint.entity';
+import { TaskHistoryChange } from '../task-history/entities/task-history-change.entity';
+import {
+  TaskHistory,
+  TaskHistoryDocument,
+} from '../task-history/entities/task-history.entity';
+import { User, UserDocument } from '../users/entities/user.entity';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { MoveTaskDto } from './dto/move-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
@@ -19,6 +26,9 @@ import { Task, TaskDocument, TaskWithRelations } from './entities/task.entity';
 export class TasksService {
   constructor(
     @InjectModel(Task.name) private taskModel: Model<TaskDocument>,
+    @InjectModel(TaskHistory.name)
+    private taskHistoryModel: Model<TaskHistoryDocument>,
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
     @InjectModel(Sprint.name) private sprintModel: Model<SprintDocument>,
   ) {}
 
@@ -87,13 +97,26 @@ export class TasksService {
       .exec();
   }
 
-  async update(id: string, updateTaskDto: UpdateTaskDto): Promise<void> {
+  async update(
+    id: string,
+    updateTaskDto: UpdateTaskDto,
+    userId: string,
+  ): Promise<void> {
     const { projectId, createdBy, assigneeId, sprintId, ...rest } =
       updateTaskDto;
 
     const foundTask: TaskWithRelations | null = await this.taskModel
       .findById(id)
-      .populate('sprint')
+      .populate([
+        {
+          path: 'sprint',
+          select: '_id status',
+        },
+        {
+          path: 'assignee',
+          select: '_id fullName avatar',
+        },
+      ])
       .lean()
       .exec();
 
@@ -104,6 +127,20 @@ export class TasksService {
     if (foundTask?.sprint?.status === ESprintStatus.COMPLETED) {
       throw new BadRequestException(
         'Cannot modify tasks in a completed sprint.',
+      );
+    }
+
+    const promises: Promise<unknown>[] = [];
+
+    const changes = await this.getTaskChanges(foundTask, updateTaskDto);
+
+    if (changes?.length > 0) {
+      promises.push(
+        this.taskHistoryModel.create({
+          taskId: new Types.ObjectId(id),
+          userId: new Types.ObjectId(userId),
+          changes,
+        }),
       );
     }
 
@@ -123,7 +160,9 @@ export class TasksService {
       ...(assigneeId && { assigneeId: new Types.ObjectId(assigneeId) }),
     };
 
-    await this.taskModel.findByIdAndUpdate(id, updateQuery).exec();
+    promises.push(this.taskModel.findByIdAndUpdate(id, updateQuery).exec());
+
+    await Promise.all(promises);
   }
 
   async moveTask(id: string, moveTaskDto: MoveTaskDto): Promise<Task> {
@@ -160,6 +199,113 @@ export class TasksService {
 
   findOne(id: string) {
     return this.taskModel.findById(id).populate('assignee').exec();
+  }
+
+  getHistories(taskId: string) {
+    return this.taskHistoryModel
+      .find({ taskId: new Types.ObjectId(taskId) })
+      .populate('user', '_id fullName avatar')
+      .sort({ createdAt: -1 })
+      .lean()
+      .exec();
+  }
+
+  async getTaskChanges(foundTask: TaskWithRelations, updateDto: UpdateTaskDto) {
+    const changes: TaskHistoryChange[] = [];
+
+    if (
+      updateDto?.assigneeId &&
+      updateDto?.assigneeId !== foundTask?.assigneeId?.toString()
+    ) {
+      const newAssignee = await this.userModel
+        .findById(updateDto?.assigneeId)
+        .select('_id fullName')
+        .lean()
+        .exec();
+      changes.push({
+        field: 'assignee',
+        oldValue: foundTask?.assignee?.fullName ?? '',
+        newValue: newAssignee?.fullName ?? '',
+      });
+    }
+
+    if (updateDto?.status && updateDto?.status !== foundTask?.status) {
+      changes.push({
+        field: 'status',
+        oldValue: foundTask?.status,
+        newValue: updateDto?.status,
+      });
+    }
+
+    if (updateDto?.title && updateDto?.title !== foundTask?.title) {
+      changes.push({
+        field: 'title',
+        oldValue: foundTask?.title,
+        newValue: updateDto?.title,
+      });
+    }
+
+    if (
+      updateDto?.description &&
+      updateDto?.description !== foundTask?.description
+    ) {
+      changes.push({
+        field: 'description',
+        oldValue: foundTask?.description,
+        newValue: updateDto?.description,
+      });
+    }
+
+    if (updateDto?.priority && updateDto?.priority !== foundTask?.priority) {
+      changes.push({
+        field: 'priority',
+        oldValue: foundTask?.priority,
+        newValue: updateDto?.priority,
+      });
+    }
+
+    if (updateDto?.type && updateDto?.type !== foundTask?.type) {
+      changes.push({
+        field: 'type',
+        oldValue: foundTask?.type,
+        newValue: updateDto?.type,
+      });
+    }
+
+    if (
+      updateDto?.estimatedHours &&
+      updateDto?.estimatedHours !== foundTask?.estimatedHours
+    ) {
+      changes.push({
+        field: 'estimatedHours',
+        oldValue: `${foundTask?.estimatedHours}h`,
+        newValue: `${updateDto?.estimatedHours}h`,
+      });
+    }
+
+    if (
+      updateDto?.startDate &&
+      !dayjs(updateDto?.startDate).isSame(foundTask?.startDate, 'day')
+    ) {
+      changes.push({
+        field: 'startDate',
+        oldValue: dayjs(foundTask?.startDate).format('MMMM D, YYYY'),
+        newValue: dayjs(updateDto?.startDate).format('MMMM D, YYYY'),
+      });
+    }
+
+    if (
+      updateDto?.dueDate &&
+      !dayjs(updateDto?.dueDate).isSame(foundTask?.dueDate, 'day')
+    ) {
+      changes.push({
+        field: 'dueDate',
+        oldValue: dayjs(foundTask?.dueDate).format('MMMM D, YYYY'),
+        newValue: dayjs(updateDto?.dueDate).format('MMMM D, YYYY'),
+      });
+    }
+
+    return changes;
   }
 
   checkTaskReopened(oldStatus: ETaskStatus, newStatus: ETaskStatus): boolean {

@@ -16,6 +16,7 @@ import { TimesheetModule } from './modules/timesheet/timesheet.module';
 import { UploadController } from './modules/upload/upload.controller';
 import { UploadModule } from './modules/upload/upload.module';
 import { UsersModule } from './modules/users/users.module';
+import { TaskHistoryModule } from './modules/task-history/task-history.module';
 
 @Module({
   imports: [
@@ -67,6 +68,7 @@ import { UsersModule } from './modules/users/users.module';
     TimesheetModule,
     UploadModule,
     UsersModule,
+    TaskHistoryModule,
   ],
   controllers: [AppController, UploadController],
   providers: [AppService],
