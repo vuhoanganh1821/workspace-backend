@@ -6,6 +6,7 @@ export class CreateTaskDto {
   description?: string;
   status?: ETaskStatus;
   priority?: string;
+  type?: string;
   projectId: string | Types.ObjectId;
   assigneeId?: string | Types.ObjectId;
   sprintId?: string | Types.ObjectId;

@@ -56,6 +56,11 @@ export class TasksController {
     return this.tasksService.getHistories(id);
   }
 
+  @Get(':id/comments')
+  getTaskComments(@Param('id') id: string) {
+    return this.tasksService.getComments(id);
+  }
+
   @Patch(':id')
   update(
     @Param('id') id: string,

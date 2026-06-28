@@ -11,6 +11,10 @@ import {
   Sprint,
   SprintDocument,
 } from 'src/modules/sprints/entities/sprint.entity';
+import {
+  TaskComment,
+  TaskCommentDocument,
+} from '../task-comment/entities/task-comment.entity';
 import { TaskHistoryChange } from '../task-history/entities/task-history-change.entity';
 import {
   TaskHistory,
@@ -28,6 +32,8 @@ export class TasksService {
     @InjectModel(Task.name) private taskModel: Model<TaskDocument>,
     @InjectModel(TaskHistory.name)
     private taskHistoryModel: Model<TaskHistoryDocument>,
+    @InjectModel(TaskComment.name)
+    private taskCommentModel: Model<TaskCommentDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     @InjectModel(Sprint.name) private sprintModel: Model<SprintDocument>,
   ) {}
@@ -203,6 +209,15 @@ export class TasksService {
 
   getHistories(taskId: string) {
     return this.taskHistoryModel
+      .find({ taskId: new Types.ObjectId(taskId) })
+      .populate('user', '_id fullName avatar')
+      .sort({ createdAt: -1 })
+      .lean()
+      .exec();
+  }
+
+  getComments(taskId: string) {
+    return this.taskCommentModel
       .find({ taskId: new Types.ObjectId(taskId) })
       .populate('user', '_id fullName avatar')
       .sort({ createdAt: -1 })
