@@ -1,0 +1,145 @@
+@startuml
+
+left to right direction
+
+class User {
+    +ObjectId _id
+    +string email
+    +string passwordHash
+    +string fullName
+    +string role
+    +string avatar
+    +string phoneNumber
+    +string address
+    +Date dateOfBirth
+    +string gender
+    +boolean isActive
+    +Date createdAt
+    +Date updatedAt
+}
+
+class TimeLog {
+    +ObjectId _id
+    +string description
+    +Date startTime
+    +Date endTime
+    +number duration
+    +ObjectId taskId
+    +ObjectId userId
+    +ObjectId projectId
+    +Date createdAt
+    +Date updatedAt
+}
+
+class Project {
+    +ObjectId _id
+    +string name
+    +string description
+    +string companyName
+    +string companyWebsite
+    +string companyPhone
+    +string city
+    +string logo
+    +string customer
+    +string address
+    +string customerEmail
+    +string customerPhone
+    +boolean isActive
+    +Date startDate
+    +Date endDate
+    +Date createdAt
+    +Date updatedAt
+}
+
+class ProjectMember {
+    +ObjectId _id
+    +ObjectId projectId
+    +ObjectId userId
+    +string role
+    +string position
+    +Date joinedAt
+    +Date createdAt
+    +Date updatedAt
+}
+
+class Sprint {
+    +ObjectId _id
+    +string name
+    +string description
+    +string status
+    +Date startDate
+    +Date endDate
+    +ObjectId projectId
+    +Date createdAt
+    +Date updatedAt
+}
+
+class Task {
+    +ObjectId _id
+    +string title
+    +string description
+    +string[] attachments
+    +string status
+    +string priority
+    +string type
+    +ObjectId projectId
+    +ObjectId assigneeId
+    +ObjectId createdBy
+    +ObjectId sprintId
+    +Date startDate
+    +Date dueDate
+    +Date completionDate
+    +number reopenCount
+    +number estimatedHours
+    +number totalSpentHours
+    +Date createdAt
+    +Date updatedAt
+}
+
+class TaskComment {
+    +ObjectId _id
+    +ObjectId taskId
+    +ObjectId userId
+    +string message
+    +Date createdAt
+    +Date updatedAt
+}
+
+class TaskHistory {
+    +ObjectId _id
+    +ObjectId taskId
+    +ObjectId userId
+    +TaskHistoryChange[] changes
+    +Date createdAt
+    +Date updatedAt
+}
+
+class TaskHistoryChange {
+    +string field
+    +string oldValue
+    +string newValue
+}
+
+' Relationships
+Project "1" <-- "0..*" ProjectMember
+User "1" <-- "0..*" ProjectMember
+
+Project "1" <-- "0..*" Sprint
+
+Project "1" <-- "0..*" Task
+Sprint "1" <-- "0..*" Task
+User "1" <-- "0..*" Task
+
+Task "1" <-- "0..*" TimeLog
+User "1" <-- "0..*" TimeLog
+Project "1" <-- "0..*" TimeLog
+
+Task "1" <-- "0..*" TaskComment
+User "1" <-- "0..*" TaskComment
+
+Task "1" <-- "0..*" TaskHistory
+User "1" <-- "0..*" TaskHistory
+
+TaskHistory "1" *-- "0..*" TaskHistoryChange
+
+@enduml

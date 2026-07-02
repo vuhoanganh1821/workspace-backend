@@ -1,0 +1,157 @@
+@startuml
+<style>
+document {
+    BoxPadding 10
+    ParticipantPadding 10
+}
+</style>
+
+actor User
+participant "Tasks Page" as UI
+participant "TaskController" as Controller
+participant "TaskService" as Service
+participant "TaskRepository" as Repository
+database MongoDB
+
+alt Create Task (Thêm mới)
+    User -> UI: Nhập thông tin Task và nhấn "Save"
+    activate UI
+
+    UI -> Controller: Call API Create Task
+    activate Controller
+
+    Controller -> Service: createTask(dto)
+    activate Service
+
+    Service -> Service: checkPermission(userId)
+    
+    alt Không có quyền (Không phải Admin, Project Manager, Team Lead)
+        Service --> Controller: Throw ForbiddenException
+        deactivate Service
+        Controller --> UI: Trả về lỗi (403 Forbidden)
+        deactivate Controller
+        UI --> User: Hiển thị thông báo lỗi không có quyền
+    else Có quyền hợp lệ (Admin, Project Manager, Team Lead)
+        Service -> Repository: create(dto)
+        activate Repository
+
+        Repository -> MongoDB: insertOne(dto)
+        activate MongoDB
+        MongoDB --> Repository: Saved Data
+        deactivate MongoDB
+
+        Repository --> Service: Task Object
+        deactivate Repository
+
+        Service --> Controller: Task Object
+        deactivate Service
+
+        Controller --> UI: Trả về Task Object (201 Created)
+        deactivate Controller
+
+        UI --> User: Hiển thị thông báo thành công và cập nhật danh sách
+    end
+    deactivate UI
+
+else Read Task List (Xem danh sách)
+    User -> UI: Truy cập trang quản lý Task
+    activate UI
+
+    UI -> Controller: Call API Read Task List
+    activate Controller
+
+    Controller -> Service: findAll()
+    activate Service
+
+    Service -> Repository: findAll()
+    activate Repository
+
+    Repository -> MongoDB: find({})
+    activate MongoDB
+    MongoDB --> Repository: Tasks Array
+    deactivate MongoDB
+
+    Repository --> Service: Tasks Array
+    deactivate Repository
+
+    Service --> Controller: Tasks Array
+    deactivate Service
+
+    Controller --> UI: Trả về danh sách Task (200 OK)
+    deactivate Controller
+
+    UI --> User: Hiển thị danh sách Task lên bảng
+    deactivate UI
+
+else Update Task (Cập nhật)
+    User -> UI: Thay đổi thông tin Task và nhấn "Update"
+    activate UI
+
+    UI -> Controller: Call API Update Task
+    activate Controller
+
+    Controller -> Service: updateTask(id, dto)
+    activate Service
+
+    Service -> Repository: update(id, dto)
+    activate Repository
+
+    Repository -> MongoDB: findOneAndUpdate({ _id: id }, { $set: dto })
+    activate MongoDB
+    MongoDB --> Repository: Updated Data
+    deactivate MongoDB
+
+    Repository --> Service: Updated Task Object
+    deactivate Repository
+
+    Service --> Controller: Updated Task Object
+    deactivate Service
+
+    Controller --> UI: Trả về kết quả cập nhật (200 OK)
+    deactivate Controller
+
+    UI --> User: Thông báo cập nhật thành công
+    deactivate UI
+
+else Delete Task (Xóa)
+    User -> UI: Nhấn nút "Delete" và xác nhận xóa
+    activate UI
+
+    UI -> Controller: Call API Delete Task
+    activate Controller
+
+    Controller -> Service: deleteTask(id)
+    activate Service
+
+    Service -> Service: checkPermission(userId)
+
+    alt Không có quyền (Không phải Admin, Project Manager, Team Lead)
+        Service --> Controller: Throw ForbiddenException
+        deactivate Service
+        Controller --> UI: Trả về lỗi (403 Forbidden)
+        deactivate Controller
+        UI --> User: Hiển thị thông báo lỗi không có quyền
+    else Có quyền hợp lệ (Admin, Project Manager, Team Lead)
+        Service -> Repository: delete(id)
+        activate Repository
+
+        Repository -> MongoDB: findOneAndDelete({ _id: id })
+        activate MongoDB
+        MongoDB --> Repository: Delete Result
+        deactivate MongoDB
+
+        Repository --> Service: Delete Result
+        deactivate Repository
+
+        Service --> Controller: Delete Result
+        deactivate Service
+
+        Controller --> UI: Trả về thông báo xóa thành công (200 OK)
+        deactivate Controller
+
+        UI --> User: Xóa thành công và làm mới danh sách
+    end
+    deactivate UI
+end
+
+@enduml

@@ -1,0 +1,49 @@
+@startuml
+<style>
+document {
+    BoxPadding 10
+    ParticipantPadding 10
+}
+</style>
+
+actor User
+participant "Performance Page" as UI
+participant "UserController" as Controller
+participant "UserService" as Service
+participant "TaskRepository" as TaskRepository
+database MongoDB
+
+User -> UI: Chọn bộ lọc xem hiệu suất
+activate UI
+
+UI -> Controller: Call API Get User Performance
+activate Controller
+
+Controller -> Service: getPerformance(userId, query)
+activate Service
+
+Service -> Service: getUserPerformancePipeline(userId, query)
+
+Service -> TaskRepository: aggregate(pipeline)
+activate TaskRepository
+
+TaskRepository -> MongoDB: aggregate(pipeline)
+activate MongoDB
+MongoDB --> TaskRepository: aggregationResult
+deactivate MongoDB
+
+TaskRepository --> Service: aggregationResult
+deactivate TaskRepository
+
+Service -> Service: Calculate KPIs, Completion Rate & Map DTO Data
+
+Service --> Controller: UserPerformanceDto
+deactivate Service
+
+Controller --> UI: Trả về dữ liệu hiệu suất (200 OK)
+deactivate Controller
+
+UI --> User: Hiển thị biểu đồ tiến độ và hiệu suất làm việc
+deactivate UI
+
+@enduml

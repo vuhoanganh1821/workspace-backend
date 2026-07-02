@@ -1,0 +1,137 @@
+@startuml
+<style>
+document {
+    BoxPadding 10
+    ParticipantPadding 10
+}
+</style>
+
+actor Admin
+participant "Users Page" as UI
+participant "UserController" as Controller
+participant "UserService" as Service
+participant "UserRepository" as Repository
+database MongoDB
+
+alt Create User (Thêm mới)
+    Admin -> UI: Nhập thông tin User và nhấn "Save"
+    activate UI
+
+    UI -> Controller: Call API Create User
+    activate Controller
+
+    Controller -> Service: createUser(dto)
+    activate Service
+
+    Service -> Repository: create(dto)
+    activate Repository
+
+    Repository -> MongoDB: insertOne(dto)
+    activate MongoDB
+    MongoDB --> Repository: Saved Data
+    deactivate MongoDB
+
+    Repository --> Service: User Object
+    deactivate Repository
+
+    Service --> Controller: User Object
+    deactivate Service
+
+    Controller --> UI: Trả về User Object (201 Created)
+    deactivate Controller
+
+    UI --> Admin: Hiển thị thông báo thành công và cập nhật danh sách
+    deactivate UI
+
+else Read User List (Xem danh sách)
+    Admin -> UI: Truy cập trang quản lý User
+    activate UI
+
+    UI -> Controller: Call API Read User List
+    activate Controller
+
+    Controller -> Service: findAll()
+    activate Service
+
+    Service -> Repository: findAll()
+    activate Repository
+
+    Repository -> MongoDB: find({})
+    activate MongoDB
+    MongoDB --> Repository: Users Array
+    deactivate MongoDB
+
+    Repository --> Service: Users Array
+    deactivate Repository
+
+    Service --> Controller: Users Array
+    deactivate Service
+
+    Controller --> UI: Trả về danh sách User (200 OK)
+    deactivate Controller
+
+    UI --> Admin: Hiển thị danh sách User lên bảng
+    deactivate UI
+
+else Update User (Cập nhật)
+    Admin -> UI: Thay đổi thông tin User và nhấn "Update"
+    activate UI
+
+    UI -> Controller: Call API Update User
+    activate Controller
+
+    Controller -> Service: updateUser(id, dto)
+    activate Service
+
+    Service -> Repository: update(id, dto)
+    activate Repository
+
+    Repository -> MongoDB: findOneAndUpdate({ _id: id }, { $set: dto })
+    activate MongoDB
+    MongoDB --> Repository: Updated Data
+    deactivate MongoDB
+
+    Repository --> Service: Updated User Object
+    deactivate Repository
+
+    Service --> Controller: Updated User Object
+    deactivate Service
+
+    Controller --> UI: Trả về kết quả cập nhật (200 OK)
+    deactivate Controller
+
+    UI --> Admin: Thông báo cập nhật thành công
+    deactivate UI
+
+else Delete User (Xóa)
+    Admin -> UI: Nhấn nút "Delete" và xác nhận xóa
+    activate UI
+
+    UI -> Controller: Call API Delete User
+    activate Controller
+
+    Controller -> Service: deleteUser(id)
+    activate Service
+
+    Service -> Repository: delete(id)
+    activate Repository
+
+    Repository -> MongoDB: findOneAndDelete({ _id: id })
+    activate MongoDB
+    MongoDB --> Repository: Delete Result
+    deactivate MongoDB
+
+    Repository --> Service: Delete Result
+    deactivate Repository
+
+    Service --> Controller: Delete Result
+    deactivate Service
+
+    Controller --> UI: Trả về thông báo xóa thành công (200 OK)
+    deactivate Controller
+
+    UI --> Admin: Xóa thành công và làm mới danh sách
+    deactivate UI
+end
+
+@enduml

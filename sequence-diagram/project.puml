@@ -1,0 +1,137 @@
+@startuml
+<style>
+document {
+    BoxPadding 10
+    ParticipantPadding 10
+}
+</style>
+
+actor Admin
+participant "Projects Page" as UI
+participant "ProjectController" as Controller
+participant "ProjectService" as Service
+participant "ProjectRepository" as Repository
+database MongoDB
+
+alt Create Project (Thêm mới)
+    Admin -> UI: Nhập thông tin Project và nhấn "Save"
+    activate UI
+
+    UI -> Controller: Call API Create Project
+    activate Controller
+
+    Controller -> Service: createProject(dto)
+    activate Service
+
+    Service -> Repository: create(dto)
+    activate Repository
+
+    Repository -> MongoDB: insertOne(dto)
+    activate MongoDB
+    MongoDB --> Repository: Saved Data
+    deactivate MongoDB
+
+    Repository --> Service: Project Object
+    deactivate Repository
+
+    Service --> Controller: Project Object
+    deactivate Service
+
+    Controller --> UI: Trả về Project Object (201 Created)
+    deactivate Controller
+
+    UI --> Admin: Hiển thị thông báo thành công và cập nhật danh sách
+    deactivate UI
+
+else Read Project List (Xem danh sách)
+    Admin -> UI: Truy cập trang quản lý Project
+    activate UI
+
+    UI -> Controller: Call API Read Project List
+    activate Controller
+
+    Controller -> Service: findAll()
+    activate Service
+
+    Service -> Repository: findAll()
+    activate Repository
+
+    Repository -> MongoDB: find({})
+    activate MongoDB
+    MongoDB --> Repository: Projects Array
+    deactivate MongoDB
+
+    Repository --> Service: Projects Array
+    deactivate Repository
+
+    Service --> Controller: Projects Array
+    deactivate Service
+
+    Controller --> UI: Trả về danh sách Project (200 OK)
+    deactivate Controller
+
+    UI --> Admin: Hiển thị danh sách Project lên bảng
+    deactivate UI
+
+else Update Project (Cập nhật)
+    Admin -> UI: Thay đổi thông tin Project và nhấn "Update"
+    activate UI
+
+    UI -> Controller: Call API Update Project
+    activate Controller
+
+    Controller -> Service: updateProject(id, dto)
+    activate Service
+
+    Service -> Repository: update(id, dto)
+    activate Repository
+
+    Repository -> MongoDB: findOneAndUpdate({ _id: id }, { $set: dto })
+    activate MongoDB
+    MongoDB --> Repository: Updated Data
+    deactivate MongoDB
+
+    Repository --> Service: Updated Project Object
+    deactivate Repository
+
+    Service --> Controller: Updated Project Object
+    deactivate Service
+
+    Controller --> UI: Trả về kết quả cập nhật (200 OK)
+    deactivate Controller
+
+    UI --> Admin: Thông báo cập nhật thành công
+    deactivate UI
+
+else Delete Project (Xóa)
+    Admin -> UI: Nhấn nút "Delete" và xác nhận xóa
+    activate UI
+
+    UI -> Controller: Call API Delete Project
+    activate Controller
+
+    Controller -> Service: deleteProject(id)
+    activate Service
+
+    Service -> Repository: delete(id)
+    activate Repository
+
+    Repository -> MongoDB: findOneAndDelete({ _id: id })
+    activate MongoDB
+    MongoDB --> Repository: Delete Result
+    deactivate MongoDB
+
+    Repository --> Service: Delete Result
+    deactivate Repository
+
+    Service --> Controller: Delete Result
+    deactivate Service
+
+    Controller --> UI: Trả về thông báo xóa thành công (200 OK)
+    deactivate Controller
+
+    UI --> Admin: Xóa thành công và làm mới danh sách
+    deactivate UI
+end
+
+@enduml

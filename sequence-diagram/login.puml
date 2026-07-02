@@ -1,0 +1,53 @@
+@startuml
+<style>
+document {
+    BoxPadding 10
+    ParticipantPadding 10
+}
+</style>
+
+actor "Unknown User" as User
+participant "Login Page" as UI
+participant "AuthController" as Controller
+participant "AuthService" as Service
+participant "UserRepository" as Repository
+database MongoDB
+
+User -> UI: Nhập Email, Password và nhấn "Login"
+activate UI
+
+UI -> Controller: Call API Login
+activate Controller
+
+Controller -> Service: login(email, password)
+activate Service
+
+Service -> Repository: findByEmail(email)
+activate Repository
+
+Repository -> MongoDB: findOne({ email })
+activate MongoDB
+MongoDB --> Repository: User Data
+deactivate MongoDB
+
+Repository --> Service: User Object
+deactivate Repository
+
+alt Đăng nhập thất bại (Sai email hoặc mật khẩu)
+    Service --> Controller: Throw UnauthorizedException
+    Controller --> UI: Trả về lỗi
+    UI --> User: Hiển thị thông báo lỗi
+else Đăng nhập thành công
+    Service -> Service: Tạo JWT Token
+    Service --> Controller: Trả về Token và User Info
+    deactivate Service
+
+    Controller --> UI: Trả về Token và User Info
+    deactivate Controller
+
+    UI -> UI: Lưu Token
+    UI --> User: Thông báo thành công và chuyển đến Dashboard
+end
+deactivate UI
+
+@enduml

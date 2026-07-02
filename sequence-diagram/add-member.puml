@@ -1,0 +1,63 @@
+@startuml
+<style>
+document {
+    BoxPadding 10
+    ParticipantPadding 10
+}
+</style>
+
+actor User
+participant "Project Detail Page" as UI
+participant "ProjectMemberController" as Controller
+participant "ProjectMemberService" as Service
+participant "ProjectMemberRepository" as Repository
+database MongoDB
+
+User -> UI: Tại tab Detail, chọn Add Member, chọn thành viên, vai trò và nhấn "Save"
+activate UI
+
+UI -> Controller: Call API addMember(projectId, targetUserId, role)
+activate Controller
+
+Controller -> Service: addMember(projectId, targetUserId, role, currentUser)
+activate Service
+
+Service -> Service: Kiểm tra quyền (currentUser phải là Admin hoặc Project Manager)
+alt Không đủ quyền
+    Service --> Controller: Throw ForbiddenException
+    Controller --> UI: Trả về lỗi (403 Forbidden)
+    UI --> User: Hiển thị thông báo không có quyền thực hiện
+else Đủ quyền nâng cấp/gán thành viên
+    Service -> Repository: findMember(projectId, targetUserId)
+    activate Repository
+    Repository -> MongoDB: findOne({ projectId, userId: targetUserId })
+    activate MongoDB
+    MongoDB --> Repository: Member Data (hoặc null)
+    deactivate MongoDB
+    Repository --> Service: Member Object
+    deactivate Repository
+
+    alt Thành viên đã tồn tại trong dự án
+        Service --> Controller: Throw BadRequestException
+        Controller --> UI: Trả về lỗi (Thành viên đã tồn tại)
+        UI --> User: Hiển thị thông báo thành viên đã có trong dự án
+    else Thành viên chưa tồn tại
+        Service -> Repository: createMember(projectId, targetUserId, role)
+        activate Repository
+        Repository -> MongoDB: insertOne({ projectId, userId: targetUserId, role })
+        activate MongoDB
+        MongoDB --> Repository: Lưu thành công
+        deactivate MongoDB
+        Repository --> Service: New ProjectMember Object
+        deactivate Repository
+
+        Service --> Controller: Trả về kết quả gán thành công
+        deactivate Service
+        Controller --> UI: Trả về kết quả thành công
+        deactivate Controller
+        UI --> User: Thông báo thành công và cập nhật bảng Team Member
+    end
+end
+deactivate UI
+
+@enduml

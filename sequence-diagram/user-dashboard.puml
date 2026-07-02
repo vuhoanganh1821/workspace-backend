@@ -1,0 +1,71 @@
+@startuml
+<style>
+document {
+    BoxPadding 10
+    ParticipantPadding 10
+}
+</style>
+
+actor User
+participant "User Dashboard Page" as UI
+participant "DashboardController" as Controller
+participant "DashboardService" as Service
+participant "ProjectMemberRepository" as ProjectMemberRepository
+participant "ProjectRepository" as ProjectRepository
+participant "TaskRepository" as TaskRepository
+database MongoDB
+
+User -> UI: Truy cập trang Dashboard
+activate UI
+
+UI -> Controller: Call API Get User Dashboard Data
+activate Controller
+
+Controller -> Service: getUserDashboardData(userId)
+activate Service
+
+Service -> ProjectMemberRepository: findByUserId(userId)
+activate ProjectMemberRepository
+
+ProjectMemberRepository -> MongoDB: find({ userId })
+activate MongoDB
+MongoDB --> ProjectMemberRepository: ProjectMembers Array
+deactivate MongoDB
+
+ProjectMemberRepository --> Service: ProjectMembers Array
+deactivate ProjectMemberRepository
+
+Service -> ProjectRepository: findByIds(projectIds)
+activate ProjectRepository
+
+ProjectRepository -> MongoDB: find({ _id: { $in: projectIds } })
+activate MongoDB
+MongoDB --> ProjectRepository: Projects Array
+deactivate MongoDB
+
+ProjectRepository --> Service: Projects Array
+deactivate ProjectRepository
+
+Service -> TaskRepository: findAssignedTasksByProjects(userId, projectIds)
+activate TaskRepository
+
+TaskRepository -> MongoDB: find({ assigneeId: userId, projectId: { $in: projectIds } })
+activate MongoDB
+MongoDB --> TaskRepository: Tasks Array
+deactivate MongoDB
+
+TaskRepository --> Service: Tasks Array
+deactivate TaskRepository
+
+Service -> Service: Aggregate Dashboard Data
+
+Service --> Controller: Dashboard Data Object
+deactivate Service
+
+Controller --> UI: Trả về dữ liệu Dashboard (200 OK)
+deactivate Controller
+
+UI --> User: Hiển thị các thông số dữ liệu lên Dashboard
+deactivate UI
+
+@enduml

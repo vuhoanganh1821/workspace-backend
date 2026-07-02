@@ -1,8 +1,10 @@
 classDiagram
+    direction LR
+
     class User {
-        +string _id
+        +ObjectId _id
         +string email
-        +string password
+        +string passwordHash
         +string fullName
         +string role
         +string avatar
@@ -10,29 +12,26 @@ classDiagram
         +string address
         +Date dateOfBirth
         +string gender
-        +number salary
-        +string jobPositionId
         +boolean isActive
         +Date createdAt
         +Date updatedAt
     }
 
-    class Timesheet {
-        +string _id
-        +string taskName
+    class TimeLog {
+        +ObjectId _id
         +string description
         +Date startTime
         +Date endTime
-        +number hourlyRate
-        +string userId
-        +string projectId
-        +string taskTypeId
+        +number duration
+        +ObjectId taskId
+        +ObjectId userId
+        +ObjectId projectId
         +Date createdAt
         +Date updatedAt
     }
 
     class Project {
-        +string _id
+        +ObjectId _id
         +string name
         +string description
         +string companyName
@@ -45,7 +44,6 @@ classDiagram
         +string customerEmail
         +string customerPhone
         +boolean isActive
-        +boolean isArchived
         +Date startDate
         +Date endDate
         +Date createdAt
@@ -53,78 +51,93 @@ classDiagram
     }
 
     class ProjectMember {
-        +string _id
-        +string projectId
-        +string userId
-        +string memberRole
+        +ObjectId _id
+        +ObjectId projectId
+        +ObjectId userId
+        +string role
+        +string position
         +Date joinedAt
         +Date createdAt
         +Date updatedAt
     }
 
-    class TaskType {
-        +string _id
+    class Sprint {
+        +ObjectId _id
         +string name
-        +string colorCode
-        +Date createdAt
-        +Date updatedAt
-    }
-
-    class Technology {
-        +string _id
-        +string name
-        +string type
-        +Date createdAt
-        +Date updatedAt
-    }
-
-    class ProjectTechnology {
-        +string _id
-        +string projectId
-        +string technologyId
-        +Date createdAt
-        +Date updatedAt
-    }
-
-    class JobPosition {
-        +string _id
-        +string name
-        +Date createdAt
-        +Date updatedAt
-    }
-
-    class Payroll {
-        +string _id
-        +string userId
-        +number month
-        +number year
-        +number totalHours
-        +number totalAmount
-        +string paymentStatus
-        +Date processedDate
-        +Date createdAt
-        +Date updatedAt
-    }
-
-    class Contract {
-        +string _id
-        +string userId
-        +string contractType
-        +number salaryAmount
+        +string description
+        +string status
         +Date startDate
         +Date endDate
+        +ObjectId projectId
         +Date createdAt
         +Date updatedAt
+    }
+
+    class Task {
+        +ObjectId _id
+        +string title
+        +string description
+        +string[] attachments
+        +string status
+        +string priority
+        +string type
+        +ObjectId projectId
+        +ObjectId assigneeId
+        +ObjectId createdBy
+        +ObjectId sprintId
+        +Date startDate
+        +Date dueDate
+        +Date completionDate
+        +number reopenCount
+        +number estimatedHours
+        +number totalSpentHours
+        +Date createdAt
+        +Date updatedAt
+    }
+
+    class TaskComment {
+        +ObjectId _id
+        +ObjectId taskId
+        +ObjectId userId
+        +string message
+        +string[] attachments
+        +Date createdAt
+        +Date updatedAt
+    }
+
+    class TaskHistory {
+        +ObjectId _id
+        +ObjectId taskId
+        +ObjectId userId
+        +TaskHistoryChange[] changes
+        +Date createdAt
+        +Date updatedAt
+    }
+
+    class TaskHistoryChange {
+        +string field
+        +string oldValue
+        +string newValue
     }
 
     %% Relationships
-    User "1" -- "0..*" Timesheet
-    User "1" -- "0..*" ProjectMember
-    User "1" -- "0..*" Payroll
-    User "1" -- "0..*" Contract
-    JobPosition "1" -- "0..*" User
-    Project "1" -- "0..*" Timesheet
-    Project "1" -- "0..*" ProjectMember
-    Project "1" -- "0..*" ProjectTechnology
-    Technology "1" -- "0..*" ProjectTechnology
-    TaskType "1" -- "0..*" Timesheet
+    Project "1" <-- "0..*" ProjectMember
+    User "1" <-- "0..*" ProjectMember
+    
+    Project "1" <-- "0..*" Sprint
+    
+    Project "1" <-- "0..*" Task
+    Sprint "1" <-- "0..*" Task
+    User "1" <-- "0..*" Task
+    
+    Task "1" <-- "0..*" TimeLog
+    User "1" <-- "0..*" TimeLog
+    Project "1" <-- "0..*" TimeLog
+    
+    Task "1" <-- "0..*" TaskComment
+    User "1" <-- "0..*" TaskComment
+    
+    Task "1" <-- "0..*" TaskHistory
+    User "1" <-- "0..*" TaskHistory
+    
+    TaskHistory "1" *-- "0..*" TaskHistoryChange

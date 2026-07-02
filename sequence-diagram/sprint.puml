@@ -1,0 +1,79 @@
+@startuml
+<style>
+document {
+    BoxPadding 10
+    ParticipantPadding 10
+}
+</style>
+
+actor User
+participant "Project Detail Page - Sprints tab" as UI
+participant "SprintController" as Controller
+participant "SprintService" as Service
+participant "TaskRepository" as TaskRepository
+participant "SprintRepository" as SprintRepository
+database MongoDB
+
+User -> UI: Nhấn nút "Complete Sprint" và xác nhận
+activate UI
+
+UI -> Controller: Call API Complete Sprint
+activate Controller
+
+Controller -> Service: completeSprint(id, userId)
+activate Service
+
+Service -> Service: checkPermission(userId)
+
+alt Không có quyền (Không phải Admin, Project Manager, Team Lead)
+    Service --> Controller: Throw ForbiddenException
+    deactivate Service
+    Controller --> UI: Trả về lỗi (403 Forbidden)
+    deactivate Controller
+    UI --> User: Hiển thị thông báo lỗi không có quyền
+else Có quyền hợp lệ (Admin, Project Manager, Team Lead)
+    Service -> TaskRepository: findTasksBySprintId(id)
+    activate TaskRepository
+
+    TaskRepository -> MongoDB: find({ sprintId: id })
+    activate MongoDB
+    MongoDB --> TaskRepository: Tasks Array
+    deactivate MongoDB
+
+    TaskRepository --> Service: Tasks Array
+    deactivate TaskRepository
+
+    Service -> Service: checkAllTasksDone(tasks)
+
+    alt Vẫn còn Task chưa hoàn thành (chưa DONE)
+        Service --> Controller: Throw BadRequestException
+        activate Service
+        deactivate Service
+        Controller --> UI: Trả về lỗi (400 Bad Request)
+        deactivate Controller
+        UI --> User: Hiển thị thông báo lỗi còn task chưa hoàn thành
+    else Tất cả các Task đã DONE
+        Service -> SprintRepository: update(id, { status: 'COMPLETED' })
+        activate Service
+        activate SprintRepository
+
+        SprintRepository -> MongoDB: findOneAndUpdate({ _id: id }, { $set: { status: 'COMPLETED' } })
+        activate MongoDB
+        MongoDB --> SprintRepository: Updated Data
+        deactivate MongoDB
+
+        SprintRepository --> Service: Updated Sprint Object
+        deactivate SprintRepository
+
+        Service --> Controller: Updated Sprint Object
+        deactivate Service
+
+        Controller --> UI: Trả về kết quả cập nhật (200 OK)
+        deactivate Controller
+
+        UI --> User: Thông báo hoàn thành Sprint thành công và cập nhật giao diện
+    end
+end
+deactivate UI
+
+@enduml
