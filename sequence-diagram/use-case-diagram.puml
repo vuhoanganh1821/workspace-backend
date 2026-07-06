@@ -1,0 +1,94 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+
+' ==========================================
+' ĐỊNH NGHĨA ACTORS & VỊ TRÍ
+' ==========================================
+' Cụm Admin bên trái
+together {
+    actor "Admin" as admin
+}
+
+' Cụm Use Cases hệ thống và dự án nằm giữa
+rectangle "Use case diagram" {
+    
+    ' Tính năng chung đưa lên đầu nhóm
+    usecase "Login" as UC_Login
+    usecase "Manage own profile" as UC_Profile
+    
+    ' Chia hệ thống làm 2 cột bằng package ẩn để cố định layout
+    package "Admin Functions" <<Blank>> #transparent {
+        usecase "Manage admin dashboard" as UC_AdminDash
+        usecase "Manage performance" as UC_AdminPerf
+        usecase "Manage all projects" as UC_ManageAllProjects
+        usecase "Manage all sprints" as UC_ManageAllSprints
+        usecase "Manage all tasks" as UC_ManageAllTasks
+        usecase "Manage all accounts" as UC_ManageAllAccounts
+        
+        usecase "Export system report" as UC_Export
+    }
+    
+    package "User Functions" <<Blank>> #transparent {
+        usecase "View user dashboard" as UC_UserDash
+        usecase "Manage project detail" as UC_ProjDetail
+        usecase "Manage sprints in\nassigned project" as UC_ProjSprints
+        usecase "Manage tasks in\nassigned project" as UC_ProjTasks
+        usecase "Filter task list" as UC_FilterTask
+        usecase "Edit task detail" as UC_EditTask
+    }
+}
+
+' Cụm User bên phải (Dùng together để gom nhóm cố định một bên)
+together {
+    actor "User" as user
+    actor "Manager" as manager
+    actor "Team Lead" as lead
+    actor "Member" as member
+    
+    ' Sắp xếp thứ tự các Actor bên phải từ trên xuống
+    user -[hidden]down-> manager
+    manager -[hidden]down-> lead
+    lead -[hidden]down-> member
+}
+
+' Mối quan hệ kế thừa chuẩn UML cho các Actor
+user <|-- manager
+user <|-- lead
+user <|-- member
+
+' ==========================================
+' MỐI QUAN HỆ INCLUDE & EXTEND
+' ==========================================
+UC_AdminPerf .> UC_Export : <<include>>
+UC_FilterTask .> UC_EditTask : <<extend>>
+
+' ==========================================
+' LIÊN KẾT ĐƯỜNG NỐI
+' ==========================================
+
+' Admin chỉ tương tác với nhóm bên trái
+admin --- UC_Login
+admin --- UC_Profile
+admin --- UC_AdminDash
+admin --- UC_AdminPerf
+admin --- UC_ManageAllProjects
+admin --- UC_ManageAllSprints
+admin --- UC_ManageAllTasks
+admin --- UC_ManageAllAccounts
+
+' Nhóm User tương tác với nhóm bên phải
+UC_Login --- user
+UC_Profile --- user
+UC_UserDash --- user
+
+UC_ProjDetail --- manager
+UC_ProjSprints --- manager
+UC_ProjTasks --- manager
+
+UC_ProjSprints --- lead
+UC_ProjTasks --- lead
+
+UC_EditTask --- member
+
+@enduml

@@ -36,13 +36,23 @@ export class AuthService {
       email: foundUser?.email,
     };
 
-    const { _id, email, fullName, avatar, role } = foundUser;
+    const { _id, email, fullName, avatar, phoneNumber, address, role } =
+      foundUser;
 
     const accessToken = await this.jwtService.signAsync(payload, {
       secret: process.env.JWT_SECRET,
       expiresIn: '1d',
     });
 
-    return { _id, email, fullName, avatar, role, accessToken };
+    return {
+      _id,
+      email,
+      fullName,
+      avatar,
+      phoneNumber,
+      address,
+      role,
+      accessToken,
+    };
   }
 }

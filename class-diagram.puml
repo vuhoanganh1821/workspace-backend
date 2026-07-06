@@ -1,6 +1,8 @@
 @startuml
 
 left to right direction
+skinparam packageStyle rectangle
+skinparam shadowing false
 
 class User {
     +ObjectId _id
@@ -120,26 +122,28 @@ class TaskHistoryChange {
     +string newValue
 }
 
-' Relationships
-Project "1" <-- "0..*" ProjectMember
-User "1" <-- "0..*" ProjectMember
+' --- Relationships Tinh Chỉnh ---
 
-Project "1" <-- "0..*" Sprint
+Project "1" -- "0..*" ProjectMember
+User "1" -- "0..*" ProjectMember
 
-Project "1" <-- "0..*" Task
-Sprint "1" <-- "0..*" Task
-User "1" <-- "0..*" Task
+Project "1" -- "0..*" Sprint
 
-Task "1" <-- "0..*" TimeLog
-User "1" <-- "0..*" TimeLog
-Project "1" <-- "0..*" TimeLog
+Project "1" -- "0..*" Task
+Sprint "1" -- "0..*" Task
+User "1" -- "0..*" Task : "assignee / creator"
 
-Task "1" <-- "0..*" TaskComment
-User "1" <-- "0..*" TaskComment
+Task "1" -- "0..*" TimeLog
+User "1" -- "0..*" TimeLog
+Project "1" -- "0..*" TimeLog
 
-Task "1" <-- "0..*" TaskHistory
-User "1" <-- "0..*" TaskHistory
+Task "1" -- "0..*" TaskComment
+User "1" -- "0..*" TaskComment
 
+Task "1" -- "0..*" TaskHistory
+User "1" -- "0..*" TaskHistory
+
+' Thể hiện rõ TaskHistory nắm giữ (contain) các Change nội bộ
 TaskHistory "1" *-- "0..*" TaskHistoryChange
 
 @enduml
