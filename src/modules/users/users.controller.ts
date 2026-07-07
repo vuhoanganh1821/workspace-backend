@@ -12,6 +12,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { GetPerformanceQueryDto } from './dto/get-user-performance.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersService } from './users.service';
+import { FilterUserDto } from './dto/filter-user.dto';
 
 @Controller('users')
 export class UsersController {
@@ -23,8 +24,8 @@ export class UsersController {
   }
 
   @Get()
-  findAll() {
-    return this.usersService.findAll();
+  findAll(@Query() filterDto: FilterUserDto) {
+    return this.usersService.findAll(filterDto);
   }
 
   @Get(':id')

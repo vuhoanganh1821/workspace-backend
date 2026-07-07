@@ -11,7 +11,7 @@ export class Project {
   @Prop()
   description: string;
 
-  @Prop({ required: true })
+  @Prop()
   companyName: string;
 
   @Prop()

@@ -22,6 +22,7 @@ import {
 } from '../task-history/entities/task-history.entity';
 import { User, UserDocument } from '../users/entities/user.entity';
 import { CreateTaskDto } from './dto/create-task.dto';
+import { FilterTaskDto } from './dto/filter-task.dto';
 import { MoveTaskDto } from './dto/move-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { Task, TaskDocument, TaskWithRelations } from './entities/task.entity';
@@ -60,7 +61,9 @@ export class TasksService {
       .exec();
   }
 
-  async findTasksBySprint(sprintId: string) {
+  async findTasksBySprint(filterDto: FilterTaskDto) {
+    const { sprintId, search } = filterDto;
+
     if (!sprintId) {
       return { backlogTasks: [], sprintTasks: [] };
     }
@@ -75,6 +78,7 @@ export class TasksService {
           { sprintId: '' },
         ],
         projectId: new Types.ObjectId(foundSprint?.projectId),
+        ...(search && { title: { $regex: search, $options: 'i' } }),
       })
       .populate('assignee', 'fullName email avatar')
       .sort({ createdAt: -1 })
@@ -84,6 +88,7 @@ export class TasksService {
       .find({
         sprintId: new Types.ObjectId(sprintId),
         projectId: new Types.ObjectId(foundSprint?.projectId),
+        ...(search && { title: { $regex: search, $options: 'i' } }),
       })
       .populate('assignee', 'fullName email avatar')
       .sort({ createdAt: -1 })
@@ -171,24 +176,71 @@ export class TasksService {
     await Promise.all(promises);
   }
 
-  async moveTask(id: string, moveTaskDto: MoveTaskDto): Promise<Task> {
+  async moveTask(
+    id: string,
+    moveTaskDto: MoveTaskDto,
+    userId: string,
+  ): Promise<void> {
     const { sprintId } = moveTaskDto;
 
-    const updatedTask = await this.taskModel
+    let foundSprint: SprintDocument | null = null;
+
+    if (sprintId) {
+      foundSprint = await this.sprintModel
+        .findOne({
+          _id: new Types.ObjectId(sprintId ?? ''),
+        })
+        .lean()
+        .exec();
+    }
+
+    const foundTask: TaskWithRelations | null = await this.taskModel
+      .findOne({
+        _id: new Types.ObjectId(id),
+      })
+      .populate('sprint')
+      .lean()
+      .exec();
+
+    if (foundSprint?.status === ESprintStatus.COMPLETED) {
+      throw new BadRequestException('Cannot move task to completed sprint.');
+    }
+
+    if (foundTask?.sprint?.status === ESprintStatus.COMPLETED) {
+      throw new BadRequestException('Cannot move task from completed sprint.');
+    }
+
+    const oldTask: TaskWithRelations | null = await this.taskModel
       .findByIdAndUpdate(
         id,
         {
           sprintId: sprintId ? new Types.ObjectId(sprintId) : null,
         },
-        { returnDocument: 'after' },
+        { returnDocument: 'before' },
       )
+      .populate('sprint')
       .exec();
 
-    if (!updatedTask) {
+    if (!oldTask) {
       throw new NotFoundException(`Không tìm thấy Task với ID ${id}`);
     }
 
-    return updatedTask;
+    const oldSprintName = oldTask?.sprintId ? oldTask?.sprint?.name : 'Backlog';
+    const newSprintName = foundSprint ? foundSprint?.name : 'Backlog';
+
+    const changes = [
+      {
+        field: 'sprint',
+        oldValue: oldSprintName,
+        newValue: newSprintName,
+      },
+    ];
+
+    await this.taskHistoryModel.create({
+      taskId: new Types.ObjectId(id),
+      userId: new Types.ObjectId(userId),
+      changes,
+    });
   }
 
   async remove(id: string) {
@@ -196,7 +248,7 @@ export class TasksService {
     if (!result) {
       throw new NotFoundException(`Task with ID "${id}" not found.`);
     }
-    return { message: 'Xóa task thành công' };
+    return { message: 'Task deleted successfully' };
   }
 
   findAll() {
@@ -334,6 +386,6 @@ export class TasksService {
       return false;
     }
 
-    return ETaskStatusOrder[newStatus] < ETaskStatusOrder[oldStatus];
+    return newStatus === ETaskStatus.IN_PROGRESS;
   }
 }

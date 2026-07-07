@@ -12,6 +12,7 @@ import {
 import { CurrentUserId } from 'src/common/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CreateTaskDto } from './dto/create-task.dto';
+import { FilterTaskDto } from './dto/filter-task.dto';
 import { MoveTaskDto } from './dto/move-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { TasksService } from './tasks.service';
@@ -32,8 +33,8 @@ export class TasksController {
   }
 
   @Get()
-  findBySprint(@Query('sprintId') sprintId: string) {
-    return this.tasksService.findTasksBySprint(sprintId);
+  findBySprint(@Query() filterDto: FilterTaskDto) {
+    return this.tasksService.findTasksBySprint(filterDto);
   }
 
   @Get('user/:userId')
@@ -71,8 +72,12 @@ export class TasksController {
   }
 
   @Patch(':id/move')
-  moveTask(@Param('id') id: string, @Body() moveTaskDto: MoveTaskDto) {
-    return this.tasksService.moveTask(id, moveTaskDto);
+  moveTask(
+    @Param('id') id: string,
+    @Body() moveTaskDto: MoveTaskDto,
+    @CurrentUserId() userId: string,
+  ) {
+    return this.tasksService.moveTask(id, moveTaskDto, userId);
   }
 
   @Delete(':id')

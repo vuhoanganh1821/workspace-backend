@@ -1,9 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import * as bcrypt from 'bcrypt';
-import { get } from 'lodash';
 import uniqBy from 'lodash/uniqBy';
-import { Model, Types } from 'mongoose';
+import { Model, QueryFilter, Types } from 'mongoose';
 import { EProjectRole, ERole, ETaskStatus } from 'src/enums';
 import {
   ProjectMember,
@@ -13,6 +12,7 @@ import {
 import { Project, ProjectDocument } from '../projects/entities/project.entity';
 import { Task, TaskDocument } from '../tasks/entities/task.entity';
 import { CreateUserDto } from './dto/create-user.dto';
+import { FilterUserDto } from './dto/filter-user.dto';
 import {
   GetPerformanceQueryDto,
   UserPerformanceDto,
@@ -52,9 +52,15 @@ export class UsersService {
     }).save();
   }
 
-  findAll() {
+  findAll(filterDto: FilterUserDto) {
+    const { search } = filterDto;
+
+    const userQuery: QueryFilter<UserDocument> = {
+      ...(search && { fullName: { $regex: search, $options: 'i' } }),
+    };
+
     return this.userModel
-      .find()
+      .find(userQuery)
       .select('fullName email avatar role phoneNumber isActive')
       .exec();
   }
@@ -162,6 +168,10 @@ export class UsersService {
       .select('projectId')
       .lean()
       .exec();
+
+    if (myManagements?.length === 0) {
+      return [foundUser];
+    }
 
     const projectIds = myManagements.map((m) => m?.projectId);
 
