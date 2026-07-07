@@ -15,12 +15,16 @@ export class AuthService {
 
   async login(dto: LoginDto) {
     const foundUser = await this.userModel
-      .findOne({ email: dto.email })
+      .findOne({ email: dto.email, isActive: true })
       .select('+passwordHash')
       .lean();
 
     if (!foundUser) {
       throw new UnauthorizedException('Email or password is incorrect!');
+    }
+
+    if (!foundUser?.isActive) {
+      throw new UnauthorizedException('Your account has been disabled');
     }
 
     const isMatch = await bcrypt.compare(
