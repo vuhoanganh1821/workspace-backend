@@ -16,7 +16,7 @@ export class Sprint {
     enum: [ESprintStatus.ACTIVE, ESprintStatus.COMPLETED],
     default: ESprintStatus.ACTIVE,
   })
-  status: string;
+  status: ESprintStatus;
 
   @Prop()
   startDate: Date;

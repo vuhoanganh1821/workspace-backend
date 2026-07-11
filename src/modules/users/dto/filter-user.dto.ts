@@ -4,4 +4,7 @@ export class FilterUserDto {
   @IsOptional()
   @IsString()
   search?: string;
+
+  skip: number;
+  limit: number;
 }

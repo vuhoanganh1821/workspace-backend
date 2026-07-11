@@ -44,9 +44,9 @@ export class TasksService {
 
     const newTask = new this.taskModel({
       ...createTaskDto,
+      ...(assigneeId && { assigneeId: new Types.ObjectId(assigneeId) }),
       projectId: new Types.ObjectId(projectId),
       createdBy: new Types.ObjectId(createdBy),
-      assigneeId: new Types.ObjectId(assigneeId),
       sprintId: sprintId ? new Types.ObjectId(sprintId) : null,
     });
 

@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types, QueryFilter } from 'mongoose';
 import { getValidArray } from 'src/common';
+import { PaginationList } from 'src/common/types';
 import {
   ProjectMember,
   ProjectMemberDocument,
@@ -20,8 +21,10 @@ export class ProjectsService {
     private projectMemberModel: Model<ProjectMemberDocument>,
   ) {}
 
-  async getProjects(filterDto: GetProjectsFilterDto): Promise<Project[]> {
-    const { userId, search } = filterDto;
+  async getProjects(
+    filterDto: GetProjectsFilterDto,
+  ): Promise<PaginationList<Project>> {
+    const { userId, search, skip, limit } = filterDto;
 
     const projectIds: Types.ObjectId[] = [];
 
@@ -43,7 +46,17 @@ export class ProjectsService {
       ...(search && { name: { $regex: search, $options: 'i' } }),
     };
 
-    return this.projectModel.find(projectQuery).sort({ updatedAt: -1 }).exec();
+    const [results, totalCount] = await Promise.all([
+      this.projectModel
+        .find(projectQuery)
+        .sort({ updatedAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .exec(),
+      this.projectModel.countDocuments(projectQuery).exec(),
+    ]);
+
+    return { results, totalCount };
   }
 
   async create(createProjectDto: CreateProjectDto) {

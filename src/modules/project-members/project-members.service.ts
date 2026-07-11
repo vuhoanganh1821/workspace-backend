@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
+import { Task, TaskDocument } from '../tasks/entities/task.entity';
 import { CreateProjectMemberDto } from './dto/create-project-member.dto';
 import { UpdateProjectMemberDto } from './dto/update-project-member.dto';
 import {
@@ -11,6 +12,9 @@ import {
 @Injectable()
 export class ProjectMembersService {
   constructor(
+    @InjectModel(Task.name)
+    private taskModel: Model<TaskDocument>,
+
     @InjectModel(ProjectMember.name)
     private projectMemberModel: Model<ProjectMemberDocument>,
   ) {}
@@ -39,7 +43,22 @@ export class ProjectMembersService {
     );
   }
 
-  remove(id: string) {
-    return this.projectMemberModel.findByIdAndDelete(id);
+  async remove(id: string) {
+    const foundMember = await this.projectMemberModel.findOne({ _id: id });
+
+    if (foundMember) {
+      await Promise.all([
+        this.projectMemberModel.findByIdAndDelete(id),
+        this.taskModel.updateMany(
+          {
+            assigneeId: new Types.ObjectId(foundMember?.userId),
+            projectId: new Types.ObjectId(foundMember?.projectId),
+          },
+          {
+            $unset: { assigneeId: 1 },
+          },
+        ),
+      ]);
+    }
   }
 }

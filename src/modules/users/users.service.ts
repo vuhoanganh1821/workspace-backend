@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import * as bcrypt from 'bcrypt';
 import uniqBy from 'lodash/uniqBy';
 import { Model, QueryFilter, Types } from 'mongoose';
+import { PaginationList } from 'src/common/types';
 import { EProjectRole, ERole, ETaskStatus } from 'src/enums';
 import {
   ProjectMember,
@@ -52,17 +53,24 @@ export class UsersService {
     }).save();
   }
 
-  findAll(filterDto: FilterUserDto) {
-    const { search } = filterDto;
+  async findAll(filterDto: FilterUserDto): Promise<PaginationList<User>> {
+    const { search, skip, limit } = filterDto;
 
     const userQuery: QueryFilter<UserDocument> = {
       ...(search && { fullName: { $regex: search, $options: 'i' } }),
     };
 
-    return this.userModel
-      .find(userQuery)
-      .select('fullName email avatar role phoneNumber isActive')
-      .exec();
+    const [results, totalCount] = await Promise.all([
+      this.userModel
+        .find(userQuery)
+        .select('fullName email avatar role phoneNumber isActive')
+        .skip(skip)
+        .limit(limit)
+        .exec(),
+      this.userModel.countDocuments(userQuery).exec(),
+    ]);
+
+    return { results, totalCount };
   }
 
   async findOne(id: string) {

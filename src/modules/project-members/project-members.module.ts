@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
+import { Task, TaskSchema } from '../tasks/entities/task.entity';
 import {
   ProjectMember,
   ProjectMemberSchema,
@@ -10,6 +11,7 @@ import { ProjectMembersService } from './project-members.service';
 @Module({
   imports: [
     MongooseModule.forFeature([
+      { name: Task.name, schema: TaskSchema },
       { name: ProjectMember.name, schema: ProjectMemberSchema },
     ]),
   ],

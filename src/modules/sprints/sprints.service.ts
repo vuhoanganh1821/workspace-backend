@@ -1,8 +1,17 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { ETaskPriority, ETaskStatus, ETaskType } from 'src/enums';
+import {
+  ESprintStatus,
+  ETaskPriority,
+  ETaskStatus,
+  ETaskType,
+} from 'src/enums';
 import {
   Task,
   TaskDocument,
@@ -78,13 +87,38 @@ export class SprintsService {
     return this.sprintModel.findByIdAndDelete(id);
   }
 
+  async completeSprint(id: string) {
+    const foundSprint = await this.sprintModel.findOne({ _id: id });
+
+    if (!foundSprint) {
+      throw new NotFoundException('Sprint not found.');
+    }
+
+    if (foundSprint?.status === ESprintStatus.COMPLETED) {
+      throw new BadRequestException('This sprint has already been completed.');
+    }
+
+    await Promise.all([
+      this.sprintModel.findByIdAndUpdate(id, {
+        status: ESprintStatus.COMPLETED,
+      }),
+      this.taskModel.updateMany(
+        {
+          sprintId: new Types.ObjectId(id),
+          status: { $ne: ETaskStatus.DONE },
+        },
+        { sprintId: null },
+      ),
+    ]);
+  }
+
   async getCurrentSprintProgress(sprintId: string) {
     const activeSprint = await this.sprintModel.findOne({
       _id: new Types.ObjectId(sprintId),
     });
 
     if (!activeSprint) {
-      throw new NotFoundException('Không tìm thấy Sprint nào.');
+      throw new NotFoundException('Sprint not found.');
     }
 
     const pipeline = createSprintProgressPipeline(activeSprint?._id);

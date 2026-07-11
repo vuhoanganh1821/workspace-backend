@@ -65,6 +65,11 @@ export class SprintsController {
     return this.sprintsService.update(id, updateSprintDto);
   }
 
+  @Patch(':id/complete')
+  complete(@Param('id') id: string) {
+    return this.sprintsService.completeSprint(id);
+  }
+
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.sprintsService.remove(id);

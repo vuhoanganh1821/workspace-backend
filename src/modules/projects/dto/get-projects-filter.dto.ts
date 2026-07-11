@@ -8,4 +8,7 @@ export class GetProjectsFilterDto {
   @IsOptional()
   @IsString()
   search?: string;
+
+  skip: number;
+  limit: number;
 }

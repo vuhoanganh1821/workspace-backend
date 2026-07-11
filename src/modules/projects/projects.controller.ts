@@ -8,6 +8,7 @@ import {
   Delete,
   Query,
 } from '@nestjs/common';
+import { PaginationList } from 'src/common/types';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { GetProjectsFilterDto } from './dto/get-projects-filter.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
@@ -19,7 +20,9 @@ export class ProjectsController {
   constructor(private readonly projectsService: ProjectsService) {}
 
   @Get()
-  getProjects(@Query() filterDto: GetProjectsFilterDto): Promise<Project[]> {
+  getProjects(
+    @Query() filterDto: GetProjectsFilterDto,
+  ): Promise<PaginationList<Project>> {
     return this.projectsService.getProjects(filterDto);
   }
 

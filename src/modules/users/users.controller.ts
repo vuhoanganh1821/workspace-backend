@@ -9,10 +9,10 @@ import {
   Query,
 } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
+import { FilterUserDto } from './dto/filter-user.dto';
 import { GetPerformanceQueryDto } from './dto/get-user-performance.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersService } from './users.service';
-import { FilterUserDto } from './dto/filter-user.dto';
 
 @Controller('users')
 export class UsersController {
