@@ -111,6 +111,8 @@ export class UsersService {
       tasksData?.reduce((sum, task) => sum + (task?.reopenCount ?? 0), 0) ?? 0;
     const totalLoggedHours =
       tasksData?.reduce((sum, task) => sum + (task?.loggedHours ?? 0), 0) ?? 0;
+    const totalEstimatedHours =
+      tasksData?.reduce((sum, task) => sum + (task?.estimatedHours ?? 0), 0) ?? 0;
 
     const completedTasksCount =
       statusOverviewData?.find(
@@ -128,6 +130,7 @@ export class UsersService {
         completionRate,
         totalReopens,
         loggedHours: totalLoggedHours,
+        totalEstimatedHours: totalEstimatedHours,
       },
       projectTimeLine:
         projectTimelineData?.map((project) => ({

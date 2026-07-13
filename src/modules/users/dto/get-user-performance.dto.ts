@@ -21,6 +21,7 @@ export class UserPerformanceDto {
     completionRate: number;
     totalReopens: number;
     loggedHours: number;
+    totalEstimatedHours: number;
   };
   projectTimeLine: {
     _id: string;
