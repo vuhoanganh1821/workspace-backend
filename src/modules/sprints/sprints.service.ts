@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { Model, QueryFilter, Types } from 'mongoose';
 import {
   ESprintStatus,
   ETaskPriority,
@@ -55,15 +55,25 @@ export class SprintsService {
     });
   }
 
-  findAll(filter?: FilterSprintDto) {
-    if (filter) {
-      const { projectId } = filter;
-      return this.sprintModel
-        .find({ projectId: new Types.ObjectId(projectId) })
+  async findAll(filterDto: FilterSprintDto) {
+    const { search, skip, limit, projectId } = filterDto;
+
+    const sprintQuery: QueryFilter<SprintDocument> = {
+      ...(search && { name: { $regex: search, $options: 'i' } }),
+      ...(projectId && { projectId: new Types.ObjectId(projectId) }),
+    };
+
+    const [results, totalCount] = await Promise.all([
+      this.sprintModel
+        .find(sprintQuery)
         .sort({ createdAt: -1 })
-        .exec();
-    }
-    return this.sprintModel.find().sort({ createdAt: -1 }).exec();
+        .skip(skip)
+        .limit(limit)
+        .exec(),
+      this.sprintModel.countDocuments(sprintQuery).exec(),
+    ]);
+
+    return { results, totalCount };
   }
 
   findOne(id: string) {

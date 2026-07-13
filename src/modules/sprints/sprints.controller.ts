@@ -6,6 +6,7 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { CreateSprintDto } from './dto/create-sprint.dto';
@@ -24,8 +25,8 @@ export class SprintsController {
     return this.sprintsService.create(createSprintDto);
   }
 
-  @Post('filter')
-  findAll(@Body() filter?: FilterSprintDto) {
+  @Get()
+  findAll(@Query() filter: FilterSprintDto) {
     return this.sprintsService.findAll(filter);
   }
 
