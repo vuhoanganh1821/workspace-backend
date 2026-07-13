@@ -186,28 +186,13 @@ export class DashboardService {
     if (!totalTasks || totalTasks === 0 || !startDate || !endDate) {
       return EProjectHealth.ON_TRACK;
     }
-
-    const progress = (doneTasks / totalTasks) * 100;
     const overdueRate = (overdueTasks / totalTasks) * 100;
 
-    // Tính toán tỷ lệ thời gian đã trôi qua bằng cấu trúc ép kiểu an toàn gốc getTime()
-    const totalSprintTime = endDate?.getTime() - startDate?.getTime();
-    const elapsedTime = new Date().getTime() - startDate?.getTime();
-
-    const timeElapsedRate =
-      totalSprintTime > 0
-        ? Math.min(Math.max((elapsedTime / totalSprintTime) * 100, 0), 100)
-        : 0;
-
-    // Độ lệch giữa thời gian tiêu tốn và lượng việc hoàn thành
-    const gap = timeElapsedRate - progress;
-
-    // Phân cấp bộ luật Agile kiểm tra điều kiện kích hoạt
-    if (overdueRate > 30 || gap > 25) {
+    if (overdueRate > 30) {
       return EProjectHealth.CRITICAL;
     }
 
-    if (overdueRate >= 10 || gap > 10) {
+    if (overdueRate >= 10) {
       return EProjectHealth.AT_RISK;
     }
 
