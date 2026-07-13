@@ -42,6 +42,10 @@ export enum ETaskType {
   DESIGN = 'Design',
   FRONTEND = 'Frontend',
   BACKEND = 'Backend',
+  MANAGEMENT = 'Management',
+  DOCUMENTATION = 'Documentation',
+  RESEARCH = 'Research',
+  ARCHITECTURE = 'Architecture',
   BUG = 'Bug',
   TESTING = 'Testing',
 }
